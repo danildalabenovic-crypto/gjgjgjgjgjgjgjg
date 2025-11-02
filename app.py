@@ -6,8 +6,10 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder='static')
 
+# Админы (без @)
 ADMINS = {'Sashabozar', 'flaros01'}
 
+# Используем /tmp — Render позволяет писать туда
 DATABASE = '/tmp/easy_gift.db'
 
 def get_db_connection():
@@ -63,8 +65,9 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Подарки (20 шт + Flor1s)
+# Подарки (22 шт)
 GIFTS_DATA = [
+    # Обычные подарки (1–20)
     {"name": "Loot Bag", "image_url": "https://nft.fragment.com/gift/lootbag-10736.medium.jpg", "stars_required": 10, "rarity": "Обычный"},
     {"name": "Toy Bear", "image_url": "https://nft.fragment.com/gift/toybear-12019.medium.jpg", "stars_required": 50, "rarity": "Обычный"},
     {"name": "Perfume Bottle", "image_url": "https://nft.fragment.com/gift/perfumebottle-1620.medium.jpg", "stars_required": 100, "rarity": "Необычный"},
@@ -85,42 +88,57 @@ GIFTS_DATA = [
     {"name": "Sharp Tongue", "image_url": "https://nft.fragment.com/gift/sharptongue-4346.medium.jpg", "stars_required": 70000, "rarity": "Мифический"},
     {"name": "Scared Cat", "image_url": "https://nft.fragment.com/gift/scaredcat-18166.medium.jpg", "stars_required": 120000, "rarity": "Уникальный"},
     {"name": "Precious Peach", "image_url": "https://nft.fragment.com/gift/preciouspeach-2161.medium.jpg", "stars_required": 200000, "rarity": "Уникальный"},
-    {"name": "Flor1s", "image_url": "https://avatars.mds.yandex.net/i?id=4f57e6c6c46272adfbc815617d088115ce35afb3-3900893-images-thumbs&n=13", "stars_required": 1000000000, "rarity": "Божественный"},
+    # Эксклюзивы из апгрейда (21–22)
+    {"name": "Сашо барзеников 2.0", "image_url": "https://avatars.mds.yandex.net/i?id=ba3ee59936f9d985da2409f4a2251348da9a509d-4842116-images-thumbs&n=13", "stars_required": 500000, "rarity": "Божественный"},
+    {"name": "Smert1xkotik", "image_url": "https://avatars.mds.yandex.net/i?id=bc62dab2789d52a92600325f2be163ac27219900-16312972-images-thumbs&n=13", "stars_required": 250000, "rarity": "Божественный"},
 ]
 
-# Кейсы
+# Кейсы (5 шт)
 CASES_DATA = [
     {"name": "smert1x", "image_url": "https://i.pinimg.com/videos/thumbnails/originals/d3/58/17/d358171152ca94f3b94d45f275fe685f.0000000.jpg", "stars_required": 50},
-    {"name": "Саша барзеников", "image_url": "https://i.ytimg.com/vi/9UnhcIpY5xw/maxresdefault.jpg", "stars_required": 150},
+    {"name": "Саша барзеников", "image_url": "https://avatars.mds.yandex.net/i?id=43dbcaedf5e2176bb68c7ffe566d4c289c53c17e-4552607-images-thumbs&n=13", "stars_required": 150},
     {"name": "FISCH", "image_url": "https://abancommercials.com/uploadStream/14056.jpg", "stars_required": 1000},
     {"name": "jailbrikor", "image_url": "https://sun1-88.userapi.com/s/v1/ig2/qMd3SNuZgqB2t17Af0GeF1wsH_MgGsPuFLv5qtJIt5TA7RgGEffRu1kHBV4ptB7_MLSroxdWDBUtewtd_XQ9Xjoy.jpg?size=1800x1800&quality=95&crop=0,0,1800,1800&ava=1", "stars_required": 50000},
+    {"name": "Flor1sidiot", "image_url": "https://avatars.mds.yandex.net/i?id=36892c5e32cd8cf727e697457a530b57325798f6-11846351-images-thumbs&n=13", "stars_required": 100000},
 ]
 
 # Распределение подарков по кейсам
 CASE_GIFTS_MAP = {
-    1: [1, 2, 3, 4, 5, 6, 11, 12],          # smert1x: 10–1000
-    2: [3, 4, 5, 6, 7, 8, 11, 12, 13, 14],  # Саша: 100–20000
-    3: [5, 6, 7, 8, 9, 10, 13, 14, 15, 16], # FISCH: 100–100000
-    4: [7, 8, 9, 10, 15, 16, 17, 18, 19, 20] # jailbrikor: 10000–500000
+    1: [1, 2, 3, 4, 5, 6, 11, 12],          # smert1x
+    2: [3, 4, 5, 6, 7, 8, 11, 12, 13, 14],  # Саша
+    3: [5, 6, 7, 8, 9, 10, 13, 14, 15, 16], # FISCH
+    4: [7, 8, 9, 10, 15, 16, 17, 18, 19, 20], # jailbrikor
+    5: [17, 18, 19, 20, 21], # Flor1sidiot
 }
+
+# Точные шансы для Flor1sidiot (в процентах)
+FLOR1SIDIOT_PROBABILITIES = [50.0, 25.0, 10.0, 1.0, 0.1]
 
 def assign_probabilities(gift_ids):
     gifts = [g for g in GIFTS_DATA if g['id'] in gift_ids]
+    if not gifts:
+        return []
+    if len(gifts) == 1:
+        return [(gifts[0]['id'], 1.0)]
+    
+    # Для Flor1sidiot — фиксированные шансы
+    if set(gift_ids) == {17, 18, 19, 20, 21}:
+        total = sum(FLOR1SIDIOT_PROBABILITIES)
+        return [(gifts[i]['id'], FLOR1SIDIOT_PROBABILITIES[i] / 100) for i in range(len(gifts))]
+    
+    # Для остальных — обратно пропорционально стоимости
     total = sum(1 / (g['stars_required'] or 1) for g in gifts)
     return [(g['id'], (1 / (g['stars_required'] or 1)) / total) for g in gifts]
 
 def populate_db():
     conn = get_db_connection()
-    # Подарки
     for i, g in enumerate(GIFTS_DATA, 1):
         g['id'] = i
         conn.execute('INSERT OR IGNORE INTO gifts (id, name, image_url, stars_required, rarity) VALUES (?, ?, ?, ?, ?)',
                      (i, g['name'], g['image_url'], g['stars_required'], g['rarity']))
-    # Кейсы
     for i, c in enumerate(CASES_DATA, 1):
         conn.execute('INSERT OR IGNORE INTO cases (id, name, image_url, stars_required) VALUES (?, ?, ?, ?)',
                      (i, c['name'], c['image_url'], c['stars_required']))
-    # Награды
     for case_id, gift_ids in CASE_GIFTS_MAP.items():
         probs = assign_probabilities(gift_ids)
         for gift_id, prob in probs:
@@ -176,6 +194,22 @@ def get_cases():
     cases = conn.execute('SELECT * FROM cases').fetchall()
     conn.close()
     return jsonify([dict(c) for c in cases])
+
+@app.route('/api/case-gifts', methods=['GET'])
+def get_case_gifts():
+    case_id = request.args.get('case_id')
+    if not case_id:
+        return jsonify({'error': 'case_id required'}), 400
+    conn = get_db_connection()
+    gifts = conn.execute('''
+        SELECT g.*, cg.probability
+        FROM case_gifts cg
+        JOIN gifts g ON cg.gift_id = g.id
+        WHERE cg.case_id = ?
+        ORDER BY cg.probability DESC
+    ''', (case_id,)).fetchall()
+    conn.close()
+    return jsonify([dict(g) for g in gifts])
 
 @app.route('/api/inventory', methods=['GET'])
 def get_inventory():
@@ -263,10 +297,12 @@ def upgrade_gift():
     data = request.json
     user_id = data.get('user_id')
     gift_ids = data.get('gift_ids', [])
+    target_name = data.get('target_gift', {}).get('name')
     if len(gift_ids) != 5:
         return jsonify({'error': 'Need exactly 5 gifts'}), 400
+    if not target_name:
+        return jsonify({'error': 'Target gift name required'}), 400
     conn = get_db_connection()
-    # Проверяем, что все подарки принадлежат пользователю, не проданы и одинаковые
     placeholders = ','.join('?' * len(gift_ids))
     rows = conn.execute(f'''
         SELECT id, gift_id FROM user_gifts
@@ -274,19 +310,21 @@ def upgrade_gift():
     ''', (*gift_ids, user_id)).fetchall()
     if len(rows) != 5:
         return jsonify({'error': 'Invalid gifts'}), 400
-    gift_ids_set = set(r['gift_id'] for r in rows)
-    if len(gift_ids_set) != 1:
-        return jsonify({'error': 'All gifts must be the same'}), 400
-    # Удаляем старые подарки
     for r in rows:
         conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
-    # Выдаём Flor1s (id=21)
+    target_gift_id = None
+    for g in GIFTS_DATA:
+        if g['name'] == target_name:
+            target_gift_id = g['id']
+            break
+    if not target_gift_id:
+        return jsonify({'error': 'Target gift not found'}), 404
     conn.execute('INSERT INTO user_gifts (user_id, gift_id, opened_at) VALUES (?, ?, ?)',
-                 (user_id, 21, datetime.now()))
-    flor = conn.execute('SELECT * FROM gifts WHERE id = 21').fetchone()
+                 (user_id, target_gift_id, datetime.now()))
+    target = conn.execute('SELECT * FROM gifts WHERE id = ?', (target_gift_id,)).fetchone()
     conn.commit()
     conn.close()
-    return jsonify({'success': True, 'gift': dict(flor)})
+    return jsonify({'success': True, 'gift': dict(target)})
 
 # Админка
 @app.route('/api/admin/give-stars', methods=['POST'])
@@ -315,7 +353,7 @@ def give_all_gifts():
     admin = conn.execute('SELECT is_admin FROM users WHERE id = ?', (user_id,)).fetchone()
     if not admin or not admin['is_admin']:
         return jsonify({'error': 'Access denied'}), 403
-    gifts = conn.execute('SELECT id FROM gifts WHERE id != 21').fetchall()  # без Flor1s
+    gifts = conn.execute('SELECT id FROM gifts').fetchall()
     for g in gifts:
         conn.execute('INSERT INTO user_gifts (user_id, gift_id, opened_at) VALUES (?, ?, ?)',
                      (user_id, g['id'], datetime.now()))
