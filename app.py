@@ -6,10 +6,10 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder='static')
 
-# Админы по username (без @)
+# Админы (без @)
 ADMINS = {'Sashabozar', 'Flaros'}
 
-# Используем /tmp для БД — Render позволяет писать туда
+# Используем /tmp — единственное место для записи на Render
 DATABASE = '/tmp/easy_gift.db'
 
 def get_db_connection():
@@ -65,6 +65,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Данные
 GIFTS_DATA = [
     {"name": "CryptoPunk #7804", "image_url": "https://placehold.co/200/ff0000/white?text=CryptoPunk", "stars_required": 20000, "rarity": "Легендарный"},
     {"name": "Bored Ape #8817", "image_url": "https://placehold.co/200/00ff00/white?text=Bored+Ape", "stars_required": 15000, "rarity": "Эпический"},
@@ -72,7 +73,7 @@ GIFTS_DATA = [
 ]
 
 CASES_DATA = [
-    {"name": "Scary Case", "image_url": "https://placehold.co/200/ff0000/white?text=Scary", "stars_required": 10, "rarity": "Лимит"},
+    {"name": "Scary Case", "image_url": "https://placehold.co/200/ff5555/white?text=Scary", "stars_required": 10, "rarity": "Лимит"},
     {"name": "Devil Case", "image_url": "https://placehold.co/200/8b0000/white?text=Devil", "stars_required": 99, "rarity": "Лимит"},
 ]
 
@@ -96,7 +97,7 @@ def populate_db():
     conn.commit()
     conn.close()
 
-# ✅ Совместимо с Flask 2.3+
+# Инициализация при первом запросе (Flask 2.3+ совместимо)
 @app.before_request
 def setup_once():
     if not hasattr(g, 'initialized'):
@@ -104,6 +105,7 @@ def setup_once():
         populate_db()
         g.initialized = True
 
+# --- API ---
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
@@ -176,7 +178,16 @@ def open_case():
                  (user_id, selected, datetime.now()))
     conn.commit()
     conn.close()
-    return jsonify({'success': True, 'gift_id': selected})
+    # Возвращаем данные подарка для отображения
+    return jsonify({
+        'success': True,
+        'gift': {
+            'id': selected,
+            'name': f'NFT #{selected}',
+            'image_url': f'https://placehold.co/200?text=NFT+{selected}',
+            'stars_required': 10000
+        }
+    })
 
 @app.route('/api/admin/give-stars', methods=['POST'])
 def give_stars():
