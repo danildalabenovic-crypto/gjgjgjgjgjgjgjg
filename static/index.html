@@ -182,7 +182,7 @@
     .spinner-container {
       position: relative;
       width: 100%;
-      height: 100px;
+      height: 120px;
       margin: 20px 0;
       display: flex;
       justify-content: center;
@@ -194,6 +194,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      transition: transform 3s cubic-bezier(0.2, 0.8, 0.4, 1);
     }
     .spinner-item {
       width: 50px;
@@ -215,30 +216,15 @@
     }
     .arrow {
       position: absolute;
-      top: -20px;
+      bottom: -20px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
       border-left: 10px solid transparent;
       border-right: 10px solid transparent;
-      border-bottom: 20px solid gold;
+      border-top: 20px solid gold;
       z-index: 10;
-    }
-    .spinner-progress {
-      width: 100%;
-      height: 10px;
-      background: #444;
-      border-radius: 5px;
-      margin: 10px 0;
-      position: relative;
-    }
-    .spinner-progress-fill {
-      height: 100%;
-      background: linear-gradient(to right, #ff8c00, #ff4d4d);
-      border-radius: 5px;
-      width: 0%;
-      transition: width 0.5s ease;
     }
     .spinner-result {
       margin-top: 20px;
@@ -282,7 +268,7 @@
       <span id="user-name">Загрузка...</span>
     </div>
     <div class="stars">
-      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3b44XSlW3mRwXsTuWWy6Xoax0Z9zZl2tOAqtB1GeBO_xxg-kn6dbiE4kFh8rMEDP2mcM&usqp=CAU" alt="Star">
+      <img src="https://avatars.mds.yandex.net/i?id=9b7e0edeff05480d53ce37c250c5b3a9b885d891-5409935-images-thumbs&n=13" alt="Star">
       <span id="user-stars">0</span>
     </div>
   </div>
@@ -344,9 +330,6 @@
       <div class="spinner-container">
         <div class="arrow"></div>
         <div class="spinner" id="spinner"></div>
-      </div>
-      <div class="spinner-progress">
-        <div class="spinner-progress-fill" id="spinnerProgressFill"></div>
       </div>
       <button class="btn" id="spinButton">Запустить</button>
       <div class="spinner-result" id="spinnerResult">
@@ -430,7 +413,7 @@
           <div class="case-name">${c.name}</div>
           <div class="case-rarity">${c.stars_required >= 50000 ? 'Уникальный' : c.stars_required >= 1000 ? 'Легендарный' : 'Обычный'}</div>
           <div class="case-stars">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3b44XSlW3mRwXsTuWWy6Xoax0Z9zZl2tOAqtB1GeBO_xxg-kn6dbiE4kFh8rMEDP2mcM&usqp=CAU" alt="Star">
+            <img src="https://avatars.mds.yandex.net/i?id=9b7e0edeff05480d53ce37c250c5b3a9b885d891-5409935-images-thumbs&n=13" alt="Star">
             ${c.stars_required}
           </div>
         `;
@@ -460,7 +443,7 @@
           <div class="gift-name">${g.name}</div>
           <div class="gift-rarity">${g.rarity}</div>
           <div class="gift-stars">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3b44XSlW3mRwXsTuWWy6Xoax0Z9zZl2tOAqtB1GeBO_xxg-kn6dbiE4kFh8rMEDP2mcM&usqp=CAU" alt="Star">
+            <img src="https://avatars.mds.yandex.net/i?id=9b7e0edeff05480d53ce37c250c5b3a9b885d891-5409935-images-thumbs&n=13" alt="Star">
             ${g.stars_required}
           </div>
         `;
@@ -474,11 +457,17 @@
     }
 
     async function loadUpgradeTargets() {
+      // Загружаем ВСЕ подарки (22 шт)
       const res = await fetch('/api/case-gifts?case_id=1');
-      const gifts = await res.json();
+      const gifts1 = await res.json();
+      const res2 = await fetch('/api/case-gifts?case_id=5');
+      const gifts2 = await res2.json();
+      const allGifts = [...gifts1, ...gifts2];
+      const uniqueGifts = [...new Map(allGifts.map(g => [g.id, g])).values()];
+      
       const container = document.getElementById('upgrade-targets');
       container.innerHTML = '';
-      gifts.forEach(target => {
+      uniqueGifts.forEach(target => {
         const div = document.createElement('div');
         div.className = 'upgrade-target';
         div.innerHTML = `
@@ -601,24 +590,20 @@
         }
       }
 
-      const progressFill = document.getElementById('spinnerProgressFill');
-      let currentProgress = 0;
-      const interval = setInterval(() => {
-        currentProgress += 1;
-        progressFill.style.width = `${currentProgress}%`;
-        if (currentProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            const result = document.getElementById('spinnerResult');
-            result.style.display = 'block';
-            document.getElementById('spinnerResultImage').src = selectedItem.image_url;
-            document.getElementById('spinnerResultName').textContent = selectedItem.name;
-            document.getElementById('spinnerResultStars').textContent = `Стоимость: ${selectedItem.stars_required} ⭐`;
-            document.getElementById('spinnerResultRarity').textContent = 'Редкость: ' + getRarityFromStars(selectedItem.stars_required);
-            saveGiftToInventory(selectedItem.id);
-          }, 500);
-        }
-      }, 50);
+      // Анимация вращения
+      const totalAngle = 1440 + Math.random() * 360; // 4-5 оборотов
+      const spinner = document.getElementById('spinner');
+      spinner.style.transform = `rotate(${totalAngle}deg)`;
+
+      setTimeout(() => {
+        const result = document.getElementById('spinnerResult');
+        result.style.display = 'block';
+        document.getElementById('spinnerResultImage').src = selectedItem.image_url;
+        document.getElementById('spinnerResultName').textContent = selectedItem.name;
+        document.getElementById('spinnerResultStars').textContent = `Стоимость: ${selectedItem.stars_required} ⭐`;
+        document.getElementById('spinnerResultRarity').textContent = 'Редкость: ' + getRarityFromStars(selectedItem.stars_required);
+        saveGiftToInventory(selectedItem.id);
+      }, 3200);
     }
 
     function getRarityFromStars(stars) {
@@ -740,7 +725,8 @@
         document.getElementById('spinButton').disabled = false;
         document.getElementById('spinButton').textContent = 'Запустить';
         document.getElementById('spinnerResult').style.display = 'none';
-        document.getElementById('spinnerProgressFill').style.width = '0%';
+        const spinner = document.getElementById('spinner');
+        spinner.style.transform = 'rotate(0deg)';
       }
     }
 
