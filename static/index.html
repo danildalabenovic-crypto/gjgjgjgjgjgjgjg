@@ -13,6 +13,7 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
     .header {
       background: #2d2d3f;
@@ -32,37 +33,49 @@
       justify-content: center;
       font-weight: bold;
     }
-    .stars { display: flex; align-items: center; gap: 6px; font-weight: bold; }
-    .cases-grid {
-      padding: 16px;
+    .stars::before { content: "⭐ "; }
+    .main-content { flex: 1; overflow-y: auto; padding: 16px; display: none; }
+    .active { display: block !important; }
+    .cases-grid, .inventory-grid, .upgrade-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 18px;
-      overflow-y: auto;
-      flex: 1;
     }
-    .case-card {
+    .case-card, .gift-card {
       background: #2d2d3f;
       border-radius: 16px;
-      padding: 18px 12px;
+      padding: 16px;
       text-align: center;
       cursor: pointer;
       transition: transform 0.2s;
     }
-    .case-card:hover { transform: scale(1.03); }
-    .case-image {
+    .case-card:hover, .gift-card:hover { transform: scale(1.03); }
+    .case-image, .gift-image {
       width: 80px;
       height: 80px;
       object-fit: contain;
       margin: 0 auto 12px;
     }
-    .case-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-    .case-rarity {
-      font-size: 12px;
-      opacity: 0.85;
-      margin-bottom: 8px;
+    .case-name, .gift-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+    .case-rarity, .gift-rarity { font-size: 12px; opacity: 0.85; margin-bottom: 8px; }
+    .case-stars, .gift-stars { color: gold; font-size: 17px; font-weight: bold; }
+    .btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 18px;
+      font-size: 16px;
+      font-weight: 600;
+      width: 100%;
     }
-    .case-stars { color: gold; font-size: 17px; font-weight: bold; }
+    .btn:hover { background: #0056b3; }
+    .btn-sell { background: #ff4d4d; }
+    .btn-sell:hover { background: #cc0000; }
+    .btn-upgrade { background: #28a745; }
+    .btn-upgrade:hover { background: #218838; }
     .footer {
       background: #2d2d3f;
       display: flex;
@@ -78,7 +91,7 @@
       color: #aaa;
       cursor: pointer;
     }
-    .footer-item:hover, .footer-item.active { color: white; }
+    .footer-item.active, .footer-item:hover { color: white; }
     .modal {
       display: none;
       position: fixed;
@@ -106,29 +119,23 @@
       cursor: pointer;
     }
     .close:hover { color: white; }
-    .btn {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 13px;
-      border-radius: 12px;
-      cursor: pointer;
-      margin-top: 18px;
-      font-size: 16px;
-      font-weight: 600;
-      width: 100%;
+    .wheel {
+      width: 200px;
+      height: 200px;
+      border: 4px solid gold;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: spin 2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
     }
-    .btn:hover { background: #0056b3; }
-    input {
-      padding: 12px;
-      margin: 12px 0;
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid #444;
-      background: #3a3a4f;
-      color: white;
-      font-size: 16px;
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1440deg); }
     }
+    .info-text { padding: 20px; line-height: 1.6; }
+    .selected { border: 2px solid #007bff; }
     #admin-btn { display: none; }
   </style>
 </head>
@@ -138,17 +145,48 @@
       <div class="user-avatar" id="user-initial">?</div>
       <span id="user-name">Загрузка...</span>
     </div>
-    <div class="stars">⭐ <span id="user-stars">0</span></div>
+    <div class="stars" id="user-stars">0</div>
   </div>
 
-  <div class="cases-grid" id="cases-grid"></div>
+  <!-- Главная -->
+  <div class="main-content active" id="home">
+    <div class="cases-grid" id="cases-grid"></div>
+  </div>
+
+  <!-- Апгрейд -->
+  <div class="main-content" id="upgrade">
+    <div class="upgrade-grid" id="upgrade-grid"></div>
+    <button class="btn btn-upgrade" id="upgrade-btn" disabled>Апгрейд (5 одинаковых)</button>
+  </div>
+
+  <!-- Рейтинг -->
+  <div class="main-content" id="leaderboard">
+    <h3 style="text-align:center;margin-bottom:16px;">🏆 Топ-10</h3>
+    <div id="leaderboard-list"></div>
+  </div>
+
+  <!-- Профиль -->
+  <div class="main-content" id="profile">
+    <h3 style="text-align:center;margin-bottom:16px;">👤 Мой инвентарь</h3>
+    <div class="inventory-grid" id="inventory-grid"></div>
+  </div>
+
+  <!-- Информация -->
+  <div class="main-content" id="info">
+    <div class="info-text">
+      <h3>Информация</h3>
+      <p>Создатель: <a href="https://t.me/Sashabozar" target="_blank">@Sashabozar</a></p>
+      <p>Со-владелец: <a href="https://t.me/flaros01" target="_blank">@flaros01</a></p>
+    </div>
+  </div>
 
   <div class="footer">
-    <div class="footer-item active">🎁 Главная</div>
-    <div class="footer-item">⚙️ Апгрейд</div>
+    <div class="footer-item active" onclick="showTab('home')">🎁 Главная</div>
+    <div class="footer-item" onclick="showTab('upgrade')">⚙️ Апгрейд</div>
+    <div class="footer-item" onclick="showTab('leaderboard')">🏆 Рейтинг</div>
+    <div class="footer-item" onclick="showTab('profile')">👤 Профиль</div>
+    <div class="footer-item" onclick="showTab('info')">ℹ️ Информация</div>
     <div class="footer-item" id="admin-btn" onclick="openAdmin()">👑 Админка</div>
-    <div class="footer-item">🏆 Рейтинг</div>
-    <div class="footer-item">👤 Профиль</div>
   </div>
 
   <!-- Модалка: открытие кейса -->
@@ -161,12 +199,14 @@
     </div>
   </div>
 
-  <!-- Модалка: результат -->
+  <!-- Модалка: рулетка и результат -->
   <div id="resultModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal('resultModal')">&times;</span>
-      <h3>Поздравляем!</h3>
-      <img id="giftImage" src="" style="width:120px; height:120px; object-fit:contain; margin:16px 0;">
+      <div class="wheel">
+        <div>?</div>
+      </div>
+      <img id="giftImage" src="" style="width:120px; height:120px; object-fit:contain; margin:16px 0; display:none;">
       <p id="giftName">Подарок</p>
       <p id="giftStars">Стоимость: 0 ⭐</p>
       <button class="btn" onclick="closeModal('resultModal')">Закрыть</button>
@@ -187,15 +227,14 @@
   <script>
     let currentUser = null;
     let currentCase = null;
+    let selectedGifts = new Set();
 
-    // Telegram WebApp
     const initData = window.Telegram.WebApp.initDataUnsafe;
     const user = initData.user;
 
     if (!user) {
       document.body.innerHTML = '<div style="padding:30px;text-align:center;color:white;background:#1e1e2e;font-size:18px;">Запустите через Telegram!</div>';
     } else {
-      // Инициализация
       initApp();
     }
 
@@ -209,24 +248,27 @@
             username: user.username || 'unknown'
           })
         });
-        const data = await res.json();
-        currentUser = data;
-
-        // UI
-        const name = user.first_name || 'Пользователь';
-        document.getElementById('user-name').textContent = name;
-        document.getElementById('user-initial').textContent = name.charAt(0).toUpperCase();
-        document.getElementById('user-stars').textContent = data.stars;
-
-        if (data.is_admin) {
+        currentUser = await res.json();
+        document.getElementById('user-name').textContent = user.first_name || 'Пользователь';
+        document.getElementById('user-initial').textContent = (user.first_name || 'П')[0].toUpperCase();
+        document.getElementById('user-stars').textContent = currentUser.stars;
+        if (currentUser.is_admin) {
           document.getElementById('admin-btn').style.display = 'flex';
         }
-
         loadCases();
+        loadLeaderboard();
+        loadInventory();
+        loadUpgradeGrid();
       } catch (e) {
-        console.error(e);
         alert('Ошибка инициализации');
       }
+    }
+
+    function showTab(tabId) {
+      document.querySelectorAll('.main-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.footer-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.footer-item[onclick="showTab('${tabId}')"]`).classList.add('active');
     }
 
     async function loadCases() {
@@ -240,7 +282,7 @@
         el.innerHTML = `
           <img src="${c.image_url}" class="case-image" onerror="this.src='https://placehold.co/80?text=🔒'">
           <div class="case-name">${c.name}</div>
-          <div class="case-rarity">${c.rarity}</div>
+          <div class="case-rarity">${c.stars_required >= 50000 ? 'Уникальный' : c.stars_required >= 1000 ? 'Легендарный' : 'Обычный'}</div>
           <div class="case-stars">${c.stars_required}</div>
         `;
         el.onclick = () => {
@@ -249,6 +291,81 @@
           document.getElementById('openModal').style.display = 'flex';
         };
         grid.appendChild(el);
+      });
+    }
+
+    async function loadInventory() {
+      const res = await fetch(`/api/inventory?user_id=${currentUser.id}`);
+      const gifts = await res.json();
+      const grid = document.getElementById('inventory-grid');
+      grid.innerHTML = '';
+      if (gifts.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#888;">Инвентарь пуст</p>';
+        return;
+      }
+      gifts.forEach(g => {
+        const el = document.createElement('div');
+        el.className = 'gift-card';
+        el.innerHTML = `
+          <img src="${g.image_url}" class="gift-image" onerror="this.src='https://placehold.co/80?text=NFT'">
+          <div class="gift-name">${g.name}</div>
+          <div class="gift-rarity">${g.rarity}</div>
+          <div class="gift-stars">${g.stars_required}</div>
+        `;
+        const sellBtn = document.createElement('button');
+        sellBtn.className = 'btn btn-sell';
+        sellBtn.textContent = 'Продать';
+        sellBtn.onclick = () => sellGift(g.user_gift_id);
+        el.appendChild(sellBtn);
+        grid.appendChild(el);
+      });
+    }
+
+    async function loadUpgradeGrid() {
+      const res = await fetch(`/api/inventory?user_id=${currentUser.id}`);
+      const gifts = await res.json();
+      const grid = document.getElementById('upgrade-grid');
+      grid.innerHTML = '';
+      if (gifts.length === 0) {
+        grid.innerHTML = '<p style="text-align:center;color:#888;">Нет подарков для апгрейда</p>';
+        return;
+      }
+      gifts.forEach(g => {
+        const el = document.createElement('div');
+        el.className = 'gift-card';
+        el.innerHTML = `
+          <img src="${g.image_url}" class="gift-image" onerror="this.src='https://placehold.co/80?text=NFT'">
+          <div class="gift-name">${g.name}</div>
+          <div class="gift-rarity">${g.rarity}</div>
+        `;
+        el.dataset.giftId = g.user_gift_id;
+        el.onclick = () => toggleSelect(el, g.user_gift_id);
+        grid.appendChild(el);
+      });
+    }
+
+    function toggleSelect(el, giftId) {
+      if (selectedGifts.has(giftId)) {
+        selectedGifts.delete(giftId);
+        el.classList.remove('selected');
+      } else if (selectedGifts.size < 5) {
+        selectedGifts.add(giftId);
+        el.classList.add('selected');
+      }
+      document.getElementById('upgrade-btn').disabled = selectedGifts.size !== 5;
+    }
+
+    async function loadLeaderboard() {
+      const res = await fetch('/api/leaderboard');
+      const users = await res.json();
+      const list = document.getElementById('leaderboard-list');
+      list.innerHTML = '';
+      users.forEach((u, i) => {
+        const div = document.createElement('div');
+        div.style.padding = '10px';
+        div.style.borderBottom = '1px solid #3a3a4f';
+        div.innerHTML = `<strong>${i+1}. ${u.username}</strong>: ${u.stars} ⭐`;
+        list.appendChild(div);
       });
     }
 
@@ -267,15 +384,68 @@
         currentUser.stars -= currentCase.stars_required;
         document.getElementById('user-stars').textContent = currentUser.stars;
 
-        const gift = data.gift;
-        document.getElementById('giftImage').src = gift.image_url;
-        document.getElementById('giftName').textContent = gift.name;
-        document.getElementById('giftStars').textContent = `Стоимость: ${gift.stars_required} ⭐`;
+        // Показываем рулетку
+        document.querySelector('.wheel div').textContent = '?';
+        document.getElementById('giftImage').style.display = 'none';
         document.getElementById('resultModal').style.display = 'flex';
+
+        // Через 2 сек — результат
+        setTimeout(() => {
+          const gift = data.gift;
+          document.querySelector('.wheel').style.display = 'none';
+          document.getElementById('giftImage').src = gift.image_url;
+          document.getElementById('giftImage').style.display = 'block';
+          document.getElementById('giftName').textContent = gift.name;
+          document.getElementById('giftStars').textContent = `Стоимость: ${gift.stars_required} ⭐`;
+        }, 2000);
+
+        // Обновляем инвентарь и апгрейд
+        loadInventory();
+        loadUpgradeGrid();
       } else {
         alert('Ошибка: ' + (data.error || 'неизвестно'));
       }
     }
+
+    async function sellGift(userGiftId) {
+      if (!confirm('Продать подарок за 70% стоимости?')) return;
+      const res = await fetch('/api/sell_gift', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_gift_id: userGiftId})
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentUser.stars += data.refund;
+        document.getElementById('user-stars').textContent = currentUser.stars;
+        loadInventory();
+        loadUpgradeGrid();
+        alert(`Продано! Получено ${data.refund} ⭐`);
+      } else {
+        alert('Ошибка продажи');
+      }
+    }
+
+    async function upgradeGifts() {
+      if (selectedGifts.size !== 5) return;
+      const res = await fetch('/api/upgrade', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: currentUser.id, gift_ids: Array.from(selectedGifts)})
+      });
+      const data = await res.json();
+      if (data.success) {
+        selectedGifts.clear();
+        loadInventory();
+        loadUpgradeGrid();
+        document.getElementById('upgrade-btn').disabled = true;
+        alert('Апгрейд успешен! Получен Flor1s!');
+      } else {
+        alert('Ошибка апгрейда: ' + (data.error || 'нужно 5 одинаковых'));
+      }
+    }
+
+    document.getElementById('upgrade-btn').onclick = upgradeGifts;
 
     async function giveAllGifts() {
       const res = await fetch('/api/admin/give-all-gifts', {
@@ -287,6 +457,8 @@
       if (data.success) {
         alert(`✅ Выдано ${data.count} NFT!`);
         closeModal('adminModal');
+        loadInventory();
+        loadUpgradeGrid();
       } else {
         alert('❌ Ошибка');
       }
