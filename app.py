@@ -7,7 +7,6 @@ from datetime import datetime
 app = Flask(__name__, static_folder='static')
 
 ADMINS = {'Sashabozar', 'flaros01'}
-
 DATABASE = '/tmp/easy_gift.db'
 
 def get_db_connection():
@@ -89,7 +88,6 @@ GIFTS_DATA = [
     {"name": "Smert1xkotik", "image_url": "https://avatars.mds.yandex.net/i?id=bc62dab2789d52a92600325f2be163ac27219900-16312972-images-thumbs&n=13", "stars_required": 250000, "rarity": "Божественный"},
 ]
 
-# Кейсы (5 шт)
 CASES_DATA = [
     {"name": "smert1x", "image_url": "https://i.pinimg.com/videos/thumbnails/originals/d3/58/17/d358171152ca94f3b94d45f275fe685f.0000000.jpg", "stars_required": 50},
     {"name": "Саша барзеников", "image_url": "https://avatars.mds.yandex.net/i?id=43dbcaedf5e2176bb68c7ffe566d4c289c53c17e-4552607-images-thumbs&n=13", "stars_required": 150},
@@ -98,7 +96,6 @@ CASES_DATA = [
     {"name": "Flor1sidiot", "image_url": "https://avatars.mds.yandex.net/i?id=36892c5e32cd8cf727e697457a530b57325798f6-11846351-images-thumbs&n=13", "stars_required": 100000},
 ]
 
-# Распределение подарков по кейсам
 CASE_GIFTS_MAP = {
     1: [1, 2, 3, 4, 5],
     2: [3, 4, 5, 6, 7],
@@ -111,10 +108,8 @@ FLOR1SIDIOT_PROBABILITIES = [50.0, 25.0, 10.0, 1.0, 0.1]
 
 def assign_probabilities(gift_ids):
     gifts = [g for g in GIFTS_DATA if g['id'] in gift_ids]
-    if not gifts:
-        return []
-    if len(gifts) == 1:
-        return [(gifts[0]['id'], 1.0)]
+    if not gifts: return []
+    if len(gifts) == 1: return [(gifts[0]['id'], 1.0)]
     if set(gift_ids) == {17, 18, 19, 20, 21}:
         total = sum(FLOR1SIDIOT_PROBABILITIES)
         return [(gifts[i]['id'], FLOR1SIDIOT_PROBABILITIES[i] / 100) for i in range(len(gifts))]
@@ -292,6 +287,7 @@ def upgrade_gift():
         return jsonify({'error': 'Need exactly 5 gifts'}), 400
     if not target_name:
         return jsonify({'error': 'Target gift name required'}), 400
+
     conn = get_db_connection()
     placeholders = ','.join('?' * len(gift_ids))
     rows = conn.execute(f'''
@@ -300,6 +296,7 @@ def upgrade_gift():
     ''', (*gift_ids, user_id)).fetchall()
     if len(rows) != 5:
         return jsonify({'error': 'Invalid gifts'}), 400
+
     target_gift_id = None
     target_cost = 0
     for g in GIFTS_DATA:
@@ -309,22 +306,28 @@ def upgrade_gift():
             break
     if not target_gift_id:
         return jsonify({'error': 'Target gift not found'}), 404
-    if target_cost >= 500000:
-        success_chance = 0.001
-    elif target_cost >= 100000:
-        success_chance = 0.01
-    elif target_cost >= 50000:
-        success_chance = 0.05
-    elif target_cost >= 10000:
-        success_chance = 0.1
-    else:
+
+    # Определяем шанс
+    if target_cost <= 1000:
         success_chance = 0.5
+    elif target_cost <= 10000:
+        success_chance = 0.2
+    elif target_cost <= 50000:
+        success_chance = 0.1
+    elif target_cost <= 100000:
+        success_chance = 0.05
+    else:
+        success_chance = 0.001  # 0.1%
+
     if random.random() > success_chance:
+        # Сжигаем подарки
         for r in rows:
             conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
         conn.commit()
         conn.close()
         return jsonify({'success': False, 'error': 'Вы не смогли апгрейднуть свои подарки.'})
+
+    # Успех
     for r in rows:
         conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
     conn.execute('INSERT INTO user_gifts (user_id, gift_id, opened_at) VALUES (?, ?, ?)',
@@ -334,6 +337,7 @@ def upgrade_gift():
     conn.close()
     return jsonify({'success': True, 'gift': dict(target)})
 
+# Админка
 @app.route('/api/admin/give-stars', methods=['POST'])
 def give_stars():
     data = request.json
