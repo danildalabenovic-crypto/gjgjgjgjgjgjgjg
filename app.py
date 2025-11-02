@@ -6,10 +6,8 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder='static')
 
-# Админы (без @)
 ADMINS = {'Sashabozar', 'flaros01'}
 
-# Используем /tmp — Render позволяет писать туда
 DATABASE = '/tmp/easy_gift.db'
 
 def get_db_connection():
@@ -67,7 +65,6 @@ def init_db():
 
 # Подарки (22 шт)
 GIFTS_DATA = [
-    # Обычные подарки (1–20)
     {"name": "Loot Bag", "image_url": "https://nft.fragment.com/gift/lootbag-10736.medium.jpg", "stars_required": 10, "rarity": "Обычный"},
     {"name": "Toy Bear", "image_url": "https://nft.fragment.com/gift/toybear-12019.medium.jpg", "stars_required": 50, "rarity": "Обычный"},
     {"name": "Perfume Bottle", "image_url": "https://nft.fragment.com/gift/perfumebottle-1620.medium.jpg", "stars_required": 100, "rarity": "Необычный"},
@@ -88,7 +85,6 @@ GIFTS_DATA = [
     {"name": "Sharp Tongue", "image_url": "https://nft.fragment.com/gift/sharptongue-4346.medium.jpg", "stars_required": 70000, "rarity": "Мифический"},
     {"name": "Scared Cat", "image_url": "https://nft.fragment.com/gift/scaredcat-18166.medium.jpg", "stars_required": 120000, "rarity": "Уникальный"},
     {"name": "Precious Peach", "image_url": "https://nft.fragment.com/gift/preciouspeach-2161.medium.jpg", "stars_required": 200000, "rarity": "Уникальный"},
-    # Эксклюзивы из апгрейда (21–22)
     {"name": "Сашо барзеников 2.0", "image_url": "https://avatars.mds.yandex.net/i?id=ba3ee59936f9d985da2409f4a2251348da9a509d-4842116-images-thumbs&n=13", "stars_required": 500000, "rarity": "Божественный"},
     {"name": "Smert1xkotik", "image_url": "https://avatars.mds.yandex.net/i?id=bc62dab2789d52a92600325f2be163ac27219900-16312972-images-thumbs&n=13", "stars_required": 250000, "rarity": "Божественный"},
 ]
@@ -102,16 +98,15 @@ CASES_DATA = [
     {"name": "Flor1sidiot", "image_url": "https://avatars.mds.yandex.net/i?id=36892c5e32cd8cf727e697457a530b57325798f6-11846351-images-thumbs&n=13", "stars_required": 100000},
 ]
 
-# Распределение подарков по кейсам (по диапазону стоимости)
+# Распределение подарков по кейсам
 CASE_GIFTS_MAP = {
-    1: [1, 2, 3, 4, 5],          # smert1x: 10–100
-    2: [3, 4, 5, 6, 7],          # Саша: 50–1000
-    3: [5, 6, 7, 8, 9],          # FISCH: 500–5000
-    4: [7, 8, 9, 10, 11],        # jailbrikor: 10000–150000
-    5: [17, 18, 19, 20, 21],     # Flor1sidiot: 50000–500000
+    1: [1, 2, 3, 4, 5],
+    2: [3, 4, 5, 6, 7],
+    3: [5, 6, 7, 8, 9],
+    4: [7, 8, 9, 10, 11],
+    5: [17, 18, 19, 20, 21],
 }
 
-# Точные шансы для Flor1sidiot (в процентах)
 FLOR1SIDIOT_PROBABILITIES = [50.0, 25.0, 10.0, 1.0, 0.1]
 
 def assign_probabilities(gift_ids):
@@ -120,13 +115,9 @@ def assign_probabilities(gift_ids):
         return []
     if len(gifts) == 1:
         return [(gifts[0]['id'], 1.0)]
-    
-    # Для Flor1sidiot — фиксированные шансы
     if set(gift_ids) == {17, 18, 19, 20, 21}:
         total = sum(FLOR1SIDIOT_PROBABILITIES)
         return [(gifts[i]['id'], FLOR1SIDIOT_PROBABILITIES[i] / 100) for i in range(len(gifts))]
-    
-    # Для остальных — обратно пропорционально стоимости
     total = sum(1 / (g['stars_required'] or 1) for g in gifts)
     return [(g['id'], (1 / (g['stars_required'] or 1)) / total) for g in gifts]
 
@@ -154,7 +145,6 @@ def setup_once():
         populate_db()
         g.initialized = True
 
-# --- API ---
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
@@ -252,7 +242,7 @@ def open_case():
     if not user or not case:
         return jsonify({'error': 'User or case not found'}), 404
     if user['stars'] < case['stars_required']:
-        return jsonify({'error': 'Not enough stars'}), 400
+        return jsonify({'error': 'Вам не хватает звезд'}), 400
     rewards = conn.execute('SELECT gift_id, probability FROM case_gifts WHERE case_id = ?', (case_id,)).fetchall()
     rand = random.random()
     cum = 0.0
@@ -285,7 +275,7 @@ def sell_gift():
     ''', (user_gift_id,)).fetchone()
     if not gift:
         return jsonify({'error': 'Gift not found or already sold'}), 404
-    refund = int(gift['stars_required'] * 0.7)  # 70% возврат
+    refund = gift['stars_required']  # 100% возврат
     conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (user_gift_id,))
     conn.execute('UPDATE users SET stars = stars + ? WHERE id = ?', (refund, gift['user_id']))
     conn.commit()
@@ -310,15 +300,33 @@ def upgrade_gift():
     ''', (*gift_ids, user_id)).fetchall()
     if len(rows) != 5:
         return jsonify({'error': 'Invalid gifts'}), 400
-    for r in rows:
-        conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
     target_gift_id = None
+    target_cost = 0
     for g in GIFTS_DATA:
         if g['name'] == target_name:
             target_gift_id = g['id']
+            target_cost = g['stars_required']
             break
     if not target_gift_id:
         return jsonify({'error': 'Target gift not found'}), 404
+    if target_cost >= 500000:
+        success_chance = 0.001
+    elif target_cost >= 100000:
+        success_chance = 0.01
+    elif target_cost >= 50000:
+        success_chance = 0.05
+    elif target_cost >= 10000:
+        success_chance = 0.1
+    else:
+        success_chance = 0.5
+    if random.random() > success_chance:
+        for r in rows:
+            conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': False, 'error': 'Вы не смогли апгрейднуть свои подарки.'})
+    for r in rows:
+        conn.execute('UPDATE user_gifts SET is_sold = 1 WHERE id = ?', (r['id'],))
     conn.execute('INSERT INTO user_gifts (user_id, gift_id, opened_at) VALUES (?, ?, ?)',
                  (user_id, target_gift_id, datetime.now()))
     target = conn.execute('SELECT * FROM gifts WHERE id = ?', (target_gift_id,)).fetchone()
@@ -326,7 +334,6 @@ def upgrade_gift():
     conn.close()
     return jsonify({'success': True, 'gift': dict(target)})
 
-# Админка
 @app.route('/api/admin/give-stars', methods=['POST'])
 def give_stars():
     data = request.json
