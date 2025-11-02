@@ -25,7 +25,8 @@
     }
     .user-info { display: flex; align-items: center; gap: 12px; }
     .user-avatar {
-      width: 44px; height: 44px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: #555;
       display: flex;
@@ -119,114 +120,6 @@
       cursor: pointer;
     }
     .close:hover { color: white; }
-    .wheel-container {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      margin: 0 auto 20px;
-    }
-    .wheel {
-      width: 100%;
-      height: 100%;
-      border: 4px solid gold;
-      border-radius: 50%;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .wheel-item {
-      position: absolute;
-      width: 50%;
-      height: 50%;
-      transform-origin: bottom right;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 10px;
-      box-sizing: border-box;
-      background: #2d2d3f;
-      border: 1px solid #444;
-    }
-    .wheel-item img {
-      width: 40px;
-      height: 40px;
-      object-fit: contain;
-      margin-bottom: 5px;
-    }
-    .wheel-item span {
-      font-size: 10px;
-      line-height: 1.2;
-    }
-    .arrow {
-      position: absolute;
-      top: -20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-bottom: 20px solid gold;
-      z-index: 10;
-    }
-    .result-box {
-      margin-top: 20px;
-      padding: 10px;
-      border: 2px solid #444;
-      border-radius: 10px;
-      display: none;
-    }
-    .result-box img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin: 0 auto 10px;
-      display: block;
-    }
-    .result-box p {
-      margin: 5px 0;
-    }
-    .progress-circle {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      background: linear-gradient(to right, #ff8c00 50%, #2d2d3f 50%);
-      position: relative;
-      margin: 0 auto;
-    }
-    .progress-circle-inner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      height: 80%;
-      border-radius: 50%;
-      background: #2d2d3f;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 24px;
-      font-weight: bold;
-      color: #00ff00;
-    }
-    .info-text { padding: 20px; line-height: 1.6; }
-    .selected { border: 2px solid #007bff; }
-    #admin-btn { display: none; }
-    .upgrade-target {
-      background: #2d2d3f;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .upgrade-target.selected {
-      border: 2px solid #007bff;
-    }
-    /* Новая система открытия кейсов */
     .open-case-modal {
       display: none;
       position: fixed;
@@ -248,15 +141,15 @@
     }
     .case-preview {
       width: 100%;
-      height: 150px;
+      height: 120px;
       margin: 0 auto 20px;
       display: flex;
       justify-content: center;
       align-items: center;
     }
     .case-preview img {
-      width: 100px;
-      height: 100px;
+      width: 80px;
+      height: 80px;
       object-fit: contain;
     }
     .case-cost {
@@ -264,19 +157,6 @@
       color: gold;
       margin: 10px 0;
     }
-    .spin-button {
-      background: #ff9800;
-      color: white;
-      border: none;
-      padding: 15px;
-      border-radius: 12px;
-      cursor: pointer;
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: 600;
-      width: 100%;
-    }
-    .spin-button:hover { background: #f57c00; }
     .spinner {
       width: 100%;
       height: 100px;
@@ -302,25 +182,6 @@
     .spinner-item span {
       font-size: 10px;
       line-height: 1.2;
-    }
-    .spinner-item.selected {
-      border: 2px solid #007bff;
-    }
-    .spinner-controls {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-    .spinner-control {
-      background: #2d2d3f;
-      padding: 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .spinner-control:hover { background: #3a3a4f; }
-    .spinner-control.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
     }
     .spinner-progress {
       width: 100%;
@@ -356,6 +217,19 @@
     }
     .spinner-result .btn {
       margin-top: 10px;
+    }
+    .info-text { padding: 20px; line-height: 1.6; }
+    .selected { border: 2px solid #007bff; }
+    #admin-btn { display: none; }
+    .upgrade-target {
+      background: #2d2d3f;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .upgrade-target.selected {
+      border: 2px solid #007bff;
     }
   </style>
 </head>
@@ -421,25 +295,27 @@
     </div>
   </div>
 
-  <!-- Модалка: рулетка и результат -->
-  <div id="resultModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('resultModal')">&times;</span>
-      <div class="wheel-container">
-        <div class="arrow"></div>
-        <div class="wheel" id="wheel">
-          <!-- Заполняется динамически -->
-        </div>
+  <!-- Модалка: новая система открытия кейсов -->
+  <div id="openCaseModal" class="open-case-modal">
+    <div class="open-case-content">
+      <span class="close" onclick="closeModal('openCaseModal')">&times;</span>
+      <div class="case-preview">
+        <img id="casePreviewImage" src="" alt="Кейс">
       </div>
-      <div class="progress-circle" id="progressCircle" style="display:none;">
-        <div class="progress-circle-inner" id="progressText">0%</div>
+      <div class="case-cost" id="casePreviewCost">Стоимость: 0 ⭐</div>
+      <div class="spinner" id="spinner">
+        <!-- Заполняется динамически -->
       </div>
-      <div class="result-box" id="resultBox">
-        <img id="giftImage" src="" alt="Подарок">
-        <p id="giftName">Подарок</p>
-        <p id="giftStars">Стоимость: 0 ⭐</p>
-        <p id="giftRarity">Редкость</p>
-        <button class="btn" onclick="closeModal('resultModal')">Закрыть</button>
+      <div class="spinner-progress">
+        <div class="spinner-progress-fill" id="spinnerProgressFill"></div>
+      </div>
+      <button class="btn" id="spinButton">Запустить</button>
+      <div class="spinner-result" id="spinnerResult">
+        <img id="spinnerResultImage" src="" alt="Подарок">
+        <p id="spinnerResultName">Подарок</p>
+        <p id="spinnerResultStars">Стоимость: 0 ⭐</p>
+        <p id="spinnerResultRarity">Редкость</p>
+        <button class="btn" onclick="closeModal('openCaseModal')">Закрыть</button>
       </div>
     </div>
   </div>
@@ -455,50 +331,10 @@
     </div>
   </div>
 
-  <!-- Модалка: новая система открытия кейсов -->
-  <div id="openCaseModal" class="open-case-modal">
-    <div class="open-case-content">
-      <span class="close" onclick="closeModal('openCaseModal')">&times;</span>
-      <div class="case-preview">
-        <img id="casePreviewImage" src="" alt="Кейс">
-      </div>
-      <div class="case-cost" id="casePreviewCost">Стоимость: 0 ⭐</div>
-      <div class="spinner">
-        <div class="spinner-item" id="spinnerItem1"><img src="" alt="Подарок"><span>625</span></div>
-        <div class="spinner-item" id="spinnerItem2"><img src="" alt="Подарок"><span>900</span></div>
-        <div class="spinner-item" id="spinnerItem3"><img src="" alt="Подарок"><span>2,925</span></div>
-        <div class="spinner-item" id="spinnerItem4"><img src="" alt="Подарок"><span>7,075</span></div>
-        <div class="spinner-item" id="spinnerItem5"><img src="" alt="Подарок"><span>11,025</span></div>
-        <div class="spinner-item" id="spinnerItem6"><img src="" alt="Подарок"><span>15,050</span></div>
-        <div class="spinner-item" id="spinnerItem7"><img src="" alt="Подарок"><span>27,025</span></div>
-        <div class="spinner-item" id="spinnerItem8"><img src="" alt="Подарок"><span>50,000</span></div>
-        <div class="spinner-item" id="spinnerItem9"><img src="" alt="Подарок"><span>100,000</span></div>
-        <div class="spinner-item" id="spinnerItem10"><img src="" alt="Подарок"><span>200,000</span></div>
-      </div>
-      <div class="spinner-progress">
-        <div class="spinner-progress-fill" id="spinnerProgressFill"></div>
-      </div>
-      <div class="spinner-controls">
-        <div class="spinner-control" id="prevButton" onclick="prevSpinnerItem()"><</div>
-        <div class="spinner-control" id="nextButton" onclick="nextSpinnerItem()">></div>
-      </div>
-      <button class="spin-button" id="spinButton">Запустить</button>
-      <div class="spinner-result" id="spinnerResult">
-        <img id="spinnerResultImage" src="" alt="Подарок">
-        <p id="spinnerResultName">Подарок</p>
-        <p id="spinnerResultStars">Стоимость: 0 ⭐</p>
-        <p id="spinnerResultRarity">Редкость</p>
-        <button class="btn" onclick="closeModal('openCaseModal')">Закрыть</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     let currentUser = null;
     let currentCase = null;
     let selectedGifts = new Set();
-    let spinnerItems = [];
-    let spinnerIndex = 0;
     let spinning = false;
 
     const initData = window.Telegram.WebApp.initDataUnsafe;
@@ -594,13 +430,9 @@
     }
 
     async function loadUpgradeTargets() {
-      // Создаём список возможных целей апгрейда
-      const targets = [
-        { name: "Сашо барзеников 2.0", image_url: "https://avatars.mds.yandex.net/i?id=ba3ee59936f9d985da2409f4a2251348da9a509d-4842116-images-thumbs&n=13", stars_required: 500000 },
-        { name: "Smert1xkotik", image_url: "https://avatars.mds.yandex.net/i?id=bc62dab2789d52a92600325f2be163ac27219900-16312972-images-thumbs&n=13", stars_required: 250000 },
-        // Можно добавить больше целей
-      ];
-
+      const res = await fetch('/api/case-gifts?case_id=1'); // Берём обычные подарки
+      const gifts = await res.json();
+      const targets = gifts.filter(g => !g.name.includes('Сашо') && !g.name.includes('Smert1xkotik'));
       const container = document.getElementById('upgrade-targets');
       container.innerHTML = '';
       targets.forEach(target => {
@@ -679,45 +511,23 @@
 
       // Загружаем возможные подарки для этого кейса
       const res = await fetch(`/api/case-gifts?case_id=${currentCase.id}`);
-      const gifts = await res.json();
+      let gifts = await res.json();
+
+      // Ограничиваем до 5 случайных подарков
+      const shuffled = [...gifts].sort(() => 0.5 - Math.random());
+      const selectedGifts = shuffled.slice(0, 5);
 
       // Заполняем спиннер
-      spinnerItems = gifts.slice(0, 10); // Берём первые 10 подарков
-      for (let i = 0; i < 10; i++) {
-        const item = document.getElementById(`spinnerItem${i+1}`);
-        if (i < spinnerItems.length) {
-          item.innerHTML = `<img src="${spinnerItems[i].image_url}" alt="${spinnerItems[i].name}"><span>${spinnerItems[i].stars_required}</span>`;
-          item.dataset.giftId = spinnerItems[i].id;
-          item.dataset.probability = spinnerItems[i].probability;
-        } else {
-          item.innerHTML = `<span>?</span>`;
-          item.dataset.giftId = '';
-          item.dataset.probability = '0';
-        }
-      }
-      spinnerIndex = 0;
-      updateSpinnerControls();
-    }
-
-    function updateSpinnerControls() {
-      const prevButton = document.getElementById('prevButton');
-      const nextButton = document.getElementById('nextButton');
-      prevButton.classList.toggle('disabled', spinnerIndex === 0);
-      nextButton.classList.toggle('disabled', spinnerIndex >= spinnerItems.length - 1);
-    }
-
-    function prevSpinnerItem() {
-      if (spinnerIndex > 0) {
-        spinnerIndex--;
-        updateSpinnerControls();
-      }
-    }
-
-    function nextSpinnerItem() {
-      if (spinnerIndex < spinnerItems.length - 1) {
-        spinnerIndex++;
-        updateSpinnerControls();
-      }
+      const spinner = document.getElementById('spinner');
+      spinner.innerHTML = '';
+      selectedGifts.forEach(g => {
+        const item = document.createElement('div');
+        item.className = 'spinner-item';
+        item.innerHTML = `<img src="${g.image_url}" alt="${g.name}"><span>${g.stars_required}</span>`;
+        item.dataset.giftId = g.id;
+        item.dataset.probability = g.probability;
+        spinner.appendChild(item);
+      });
     }
 
     async function startSpin() {
@@ -732,30 +542,27 @@
       currentUser.stars -= cost;
       document.getElementById('user-stars').textContent = currentUser.stars;
 
-      // Случайное количество оборотов (3-5)
-      const rotations = 3 + Math.random() * 2;
-      const totalAngle = rotations * 360;
+      // Получаем подарки из спиннера
+      const spinnerItems = document.querySelectorAll('.spinner-item');
+      const gifts = Array.from(spinnerItems).map(item => ({
+        id: item.dataset.giftId,
+        image_url: item.querySelector('img').src,
+        name: item.querySelector('img').alt,
+        stars_required: parseInt(item.querySelector('span').textContent),
+        probability: parseFloat(item.dataset.probability)
+      }));
 
       // Выбираем случайный подарок с учётом вероятности
       const rand = Math.random();
       let cum = 0;
-      let selectedItem = spinnerItems[0];
-      for (const item of spinnerItems) {
-        cum += parseFloat(item.probability);
+      let selectedItem = gifts[0];
+      for (const g of gifts) {
+        cum += g.probability;
         if (rand <= cum) {
-          selectedItem = item;
+          selectedItem = g;
           break;
         }
       }
-
-      // Вычисляем угол остановки
-      const selectedItemIndex = spinnerItems.indexOf(selectedItem);
-      const stopAngle = totalAngle - selectedItemIndex * (360 / spinnerItems.length);
-
-      // Анимация
-      const spinner = document.querySelector('.spinner');
-      spinner.style.transition = `transform ${rotations * 2}s cubic-bezier(0.17, 0.67, 0.83, 0.67)`;
-      spinner.style.transform = `rotate(${stopAngle}deg)`;
 
       // Прогресс-бар
       const progressFill = document.getElementById('spinnerProgressFill');
@@ -772,7 +579,7 @@
             document.getElementById('spinnerResultImage').src = selectedItem.image_url;
             document.getElementById('spinnerResultName').textContent = selectedItem.name;
             document.getElementById('spinnerResultStars').textContent = `Стоимость: ${selectedItem.stars_required} ⭐`;
-            document.getElementById('spinnerResultRarity').textContent = 'Редкость: ' + getRarityFromStars(parseInt(selectedItem.stars_required));
+            document.getElementById('spinnerResultRarity').textContent = 'Редкость: ' + getRarityFromStars(selectedItem.stars_required);
 
             // Сохраняем подарок в инвентарь
             saveGiftToInventory(selectedItem.id);
